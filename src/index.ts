@@ -1,5 +1,4 @@
-import { Plugin } from "@opencode/plugin";
-import type { Context } from "@opencode/plugin/promise/plugin";
+import type { Context, Plugin } from "@opencode/plugin/promise/plugin";
 import {
   API_KEY_ENV,
   BASE_URL_ENV,
@@ -28,7 +27,10 @@ async function resolveApiKey(ctx: Context): Promise<string | undefined> {
   return process.env[API_KEY_ENV] || undefined;
 }
 
-export default Plugin.define({
+// A plain object rather than `Plugin.define(...)`: `define` only returns its
+// argument, and importing it would make `@opencode/plugin` (and its large
+// dependency tree) a runtime dependency of every install.
+const plugin: Plugin = {
   id: PROVIDER_ID,
   async setup(ctx) {
     const baseURL = process.env[BASE_URL_ENV] || DEFAULT_BASE_URL;
@@ -89,4 +91,6 @@ export default Plugin.define({
       scope,
     );
   },
-});
+};
+
+export default plugin;

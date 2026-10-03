@@ -1,12 +1,11 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@orvix/opencode",
-      "dependencies": {
-        "@opencode/plugin": "2.0.21",
-      },
       "devDependencies": {
+        "@opencode/plugin": "2.0.21",
         "@types/bun": "latest",
         "typescript": "^5.9.3",
       },

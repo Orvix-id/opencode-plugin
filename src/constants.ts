@@ -21,7 +21,7 @@ export const PROVIDER_PACKAGE = "@opencode/ai/providers/openai-compatible";
 export const CLIENT_HEADER = "x-orvix-coding-client";
 export const CLIENT_VERSION_HEADER = "x-orvix-coding-client-version";
 export const CLIENT_NAME = "opencode";
-export const PLUGIN_VERSION = "0.1.0";
+export const PLUGIN_VERSION = "0.1.1";
 
 /** Upstream ids from `/coding/v1/models` carry this funding prefix. */
 export const MODEL_PREFIX = "orvix/";
