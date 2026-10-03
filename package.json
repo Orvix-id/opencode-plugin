@@ -1,0 +1,47 @@
+{
+  "name": "@orvix-id/opencode",
+  "version": "0.1.0",
+  "description": "OpenCode v2 plugin for the Orvix Coding Plan",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "orvix",
+    "orvix-coding",
+    "coding-plan"
+  ],
+  "homepage": "https://github.com/Orvix-id/opencode-plugin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Orvix-id/opencode-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Orvix-id/opencode-plugin/issues"
+  },
+  "files": [
+    "index.ts",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun test",
+    "probe": "bun scripts/cache-probe.ts"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.0.21"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
