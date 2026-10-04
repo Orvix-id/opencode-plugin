@@ -1,0 +1,42 @@
+name: Release
+
+# Publishes to npm when a version tag is pushed (git tag v0.1.2 && git push --tags).
+# No npm token is stored anywhere: npm trusts this workflow through OIDC
+# (Trusted Publishing, configured on the package's npmjs.com settings page),
+# and every release carries a provenance statement.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run check
+
+      # Trusted publishing needs npm 11.5.1 or newer, which ships with Node 24.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+
+      - run: npm publish --provenance --access public
