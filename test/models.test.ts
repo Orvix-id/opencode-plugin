@@ -8,13 +8,14 @@ test("strips the funding prefix for the local id only", () => {
   expect(info.id).toBe("glm-5.2");
   expect(info.modelID).toBe("orvix/glm-5.2");
   expect(info.providerID).toBe("orvix-coding");
+  expect(info.name).toBe("GLM 5.2 (Orvix)");
   expect(info.compatibility.supportsPromptCacheKey).toBe(true);
   expect(info.variants.map((v: any) => v.id)).toContain("high");
 });
 
 test("unknown models get conservative defaults", () => {
   const info = toModelInfo("orvix/new-model") as any;
-  expect(info.name).toBe("new-model");
+  expect(info.name).toBe("new-model (Orvix)");
   expect(info.variants).toEqual([]);
 });
 

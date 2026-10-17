@@ -29,7 +29,8 @@ export function toModelInfo(upstreamID: string): Model.Info {
     id,
     modelID: `${MODEL_PREFIX}${id}`,
     providerID: PROVIDER_ID,
-    name: known?.name ?? id,
+    // Suffixed so Orvix models never look like OpenCode's built-in ones in the picker.
+    name: `${known?.name ?? id} (Orvix)`,
     compatibility: { supportsPromptCacheKey: true },
     capabilities: {
       tools: true,
