@@ -14,6 +14,26 @@ exclusive to Coding Plan subscribers. General discovery preserves managed and BY
 
 ## Installation
 
+### OpenCode v1 vs v2: which installation should I use?
+
+**The npm package is the same. The plugin configuration and authentication setup differ.**
+Run `opencode --version`, then follow the matching column:
+
+| | OpenCode v1 | OpenCode v2 |
+| --- | --- | --- |
+| Minimum version | `1.18.29` | `2.0.21` |
+| Install | Add the package to your config; OpenCode installs it at startup | Run `opencode plugin add @orvix-id/opencode@0.2.0`, or edit your config |
+| Config key | **`plugin`** (singular) | **`plugins`** (plural) |
+| Config entry | `"plugin": ["@orvix-id/opencode@0.2.0"]` | `"plugins": ["@orvix-id/opencode@0.2.0"]` |
+| API key setup supported by this plugin | Environment variables | Environment variables or `/connect orvix` / `/connect orvix-coding` |
+| Available providers | `orvix` and `orvix-coding` | `orvix` and `orvix-coding` |
+
+Both versions use `~/.config/opencode/opencode.json` for global settings, or `opencode.json`
+in your project for project-only settings. **Choose only the config key for your version**;
+do not add both `plugin` and `plugins`. Restart OpenCode after installation.
+
+The steps below include complete configuration examples for each version.
+
 ### 1. Check your OpenCode version
 
 ```bash
