@@ -19,14 +19,10 @@ exclusive to Coding Plan subscribers. General discovery preserves managed and BY
 **The npm package is the same. The plugin configuration and authentication setup differ.**
 Run `opencode --version`, then follow the matching column:
 
-| | OpenCode v1 | OpenCode v2 |
-| --- | --- | --- |
-| Minimum version | `1.18.29` | `2.0.21` |
-| Install | Add the package to your config; OpenCode installs it at startup | Run `opencode plugin add @orvix-id/opencode@0.2.0`, or edit your config |
-| Config key | **`plugin`** (singular) | **`plugins`** (plural) |
-| Config entry | `"plugin": ["@orvix-id/opencode@0.2.0"]` | `"plugins": ["@orvix-id/opencode@0.2.0"]` |
-| API key setup supported by this plugin | Environment variables | Environment variables or `/connect orvix` / `/connect orvix-coding` |
-| Available providers | `orvix` and `orvix-coding` | `orvix` and `orvix-coding` |
+| Version | How to install |
+| --- | --- |
+| **OpenCode v1** (≥1.18.29) | Add `"plugin": ["@orvix-id/opencode@0.2.0"]` to `~/.config/opencode/opencode.json`. Set `export ORVIX_API_KEY="your-key"`, then restart OpenCode. |
+| **OpenCode v2** (≥2.0.21) | Run `opencode plugin add @orvix-id/opencode@0.2.0`, or add `"plugins": ["@orvix-id/opencode@0.2.0"]` to `~/.config/opencode/opencode.json`. Set `export ORVIX_API_KEY="your-key"`, then restart OpenCode. Alternatively, connect each provider with `/connect orvix` and `/connect orvix-coding`. |
 
 Both versions use `~/.config/opencode/opencode.json` for global settings, or `opencode.json`
 in your project for project-only settings. **Choose only the config key for your version**;
