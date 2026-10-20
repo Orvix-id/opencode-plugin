@@ -1,7 +1,7 @@
 {
   "name": "@orvix-id/opencode",
   "version": "0.1.2",
-  "description": "OpenCode v2 plugin for the Orvix Coding Plan",
+  "description": "Official Orvix plugin for OpenCode v1/v2, supporting general and Coding API routes",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -38,8 +38,11 @@
     "probe": "bun scripts/cache-probe.ts"
   },
   "devDependencies": {
+    "@ai-sdk/openai-compatible": "1",
+    "@opencode-ai/plugin": "1.18.29",
     "@opencode/plugin": "2.0.21",
     "@types/bun": "latest",
+    "ai": "5",
     "typescript": "^5.9.3"
   }
 }

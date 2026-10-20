@@ -20,13 +20,29 @@ test("unknown models get conservative defaults", () => {
 });
 
 test("uses the live list when reachable", async () => {
-  const fake = (async () => Response.json({ data: [{ id: "orvix/glm-5.3-flash" }] })) as unknown as typeof fetch;
+  const fake = (async () =>
+    Response.json({
+      data: [{ id: "orvix/glm-5.3-flash" }],
+    })) as unknown as typeof fetch;
   const models = await resolveModels("https://x/coding/v1", "k", fake);
   expect(models.map((m) => m.id)).toEqual(["glm-5.3-flash"] as any);
 });
 
-test("falls back to the known lineup without a key or on error", async () => {
-  const failing = (async () => new Response("no", { status: 401 })) as unknown as typeof fetch;
-  expect((await resolveModels("https://x/coding/v1", undefined)).length).toBe(Object.keys(KNOWN_MODELS).length);
-  expect((await resolveModels("https://x/coding/v1", "k", failing)).length).toBe(Object.keys(KNOWN_MODELS).length);
+test("falls back to the known lineup without a key or on server failure", async () => {
+  const failing = (async () =>
+    new Response("no", { status: 503 })) as unknown as typeof fetch;
+  expect((await resolveModels("https://x/coding/v1", undefined)).length).toBe(
+    Object.keys(KNOWN_MODELS).length,
+  );
+  expect(
+    (await resolveModels("https://x/coding/v1", "k", failing)).length,
+  ).toBe(Object.keys(KNOWN_MODELS).length);
+});
+
+test("auth errors do not silently expose fallback models", async () => {
+  const failing = (async () =>
+    new Response("no", { status: 401 })) as unknown as typeof fetch;
+  await expect(resolveModels("https://x/v1", "bad", failing)).rejects.toThrow(
+    "check API key and scope",
+  );
 });
