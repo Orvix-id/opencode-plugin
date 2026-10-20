@@ -1,6 +1,6 @@
 {
   "name": "@orvix-id/opencode",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Official Orvix plugin for OpenCode v1/v2, supporting general and Coding API routes",
   "type": "module",
   "license": "MIT",
