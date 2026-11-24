@@ -5,6 +5,7 @@ import {
   KNOWN_MODELS,
   MODEL_PREFIX,
   PROVIDER_ID,
+  fallbackModelIDs,
 } from "./constants.ts";
 
 /** Stable epoch: V2 requires `time.released` but only uses it for ordering. */
@@ -17,6 +18,91 @@ export function localID(upstreamID: string): string {
     : upstreamID;
 }
 
+// Casing for recurring model-family tokens that plain capitalization gets
+// wrong, so ids this release does not know still read like vendor names.
+const FAMILY_TOKENS = new Map<string, string>([
+  ["ai", "AI"],
+  ["gpt", "GPT"],
+  ["glm", "GLM"],
+  ["vl", "VL"],
+  ["mimo", "MiMo"],
+  ["deepseek", "DeepSeek"],
+  ["minimax", "MiniMax"],
+]);
+
+/** `qwen-3.9-max` -> `Qwen 3.9 Max`, for models missing from KNOWN_MODELS. */
+export function displayName(id: string): string {
+  const parts = localID(id)
+    .split(/[-/\s]+/)
+    .filter(Boolean);
+  if (!parts.length) return id;
+  return parts
+    .map((part) => {
+      const family = FAMILY_TOKENS.get(part.toLowerCase());
+      if (family) return family;
+      if (/^v\d+(?:\.\d+)?$/i.test(part)) return part.toUpperCase();
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(" ");
+}
+
+/**
+ * Image, video, audio, embedding and rerank routes are listed by `/v1/models`
+ * (managed ones such as `orvix/flux-2-pro`, and arbitrary BYOK ids) but cannot
+ * serve chat completions, so they stay out of the picker.
+ */
+export function isNonChatModel(id: string): boolean {
+  const value = id.trim().toLowerCase();
+  return (
+    Boolean(value) &&
+    /(?:^|[-/])(embed(?:ding)?s?|image|imagine|video|audio|voice|rerank|flux|midjourney|seedream)(?:[-/.]|$)/.test(
+      value,
+    )
+  );
+}
+
+/** Rate limits and gateway hiccups at startup should not drop to the fallback lineup. */
+function isTransient(status: number): boolean {
+  return status === 429 || status === 502 || status === 503 || status === 504;
+}
+
+export function retryDelayMs(
+  attempt: number,
+  retryAfter: string | null = null,
+): number {
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0)
+      return Math.min(5_000, seconds * 1_000);
+    const date = Date.parse(retryAfter);
+    if (Number.isFinite(date))
+      return Math.max(0, Math.min(5_000, date - Date.now()));
+  }
+  return Math.min(2_000, 250 * 2 ** Math.max(0, attempt));
+}
+
+async function fetchCatalog(
+  baseURL: string,
+  apiKey: string,
+  fetchImpl: typeof fetch,
+): Promise<Response> {
+  const signal = AbortSignal.timeout(10_000);
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetchImpl(`${baseURL.replace(/\/+$/, "")}/models`, {
+      headers: { authorization: `Bearer ${apiKey}` },
+      signal,
+    });
+    if (attempt >= 2 || !isTransient(response.status)) return response;
+    await response.body?.cancel();
+    await new Promise((resolve) =>
+      setTimeout(
+        resolve,
+        retryDelayMs(attempt, response.headers.get("retry-after")),
+      ),
+    );
+  }
+}
+
 /**
  * Builds the OpenCode model record for one Coding model.
  *
@@ -24,6 +110,16 @@ export function localID(upstreamID: string): string {
  * `prompt_cache_key`. Orvix replaces it with its own session hash today, but
  * it costs nothing and keeps any pass-through upstream cache-aware.
  */
+/**
+ * Picker suffix. Both providers list the same model ids, and picking the
+ * general one by mistake bills Orvix Credits instead of the Coding Plan
+ * ("insufficient Orvix Credits" for plan-only users), so the suffix names
+ * the provider.
+ */
+export function nameSuffix(providerID: string): string {
+  return providerID === PROVIDER_ID ? "(Orvix Coding)" : "(Orvix)";
+}
+
 export function toModelInfo(
   upstreamID: string,
   providerID = PROVIDER_ID,
@@ -35,7 +131,7 @@ export function toModelInfo(
     modelID: upstreamID,
     providerID,
     // Suffixed so Orvix models never look like OpenCode's built-in ones in the picker.
-    name: `${known?.name ?? id} (Orvix)`,
+    name: `${known?.name ?? displayName(id)} ${nameSuffix(providerID)}`,
     compatibility: { supportsPromptCacheKey: true },
     capabilities: {
       tools: true,
@@ -84,13 +180,7 @@ export async function resolveModels(
   let ids: string[] = [];
   if (apiKey) {
     try {
-      const response = await fetchImpl(
-        `${baseURL.replace(/\/+$/, "")}/models`,
-        {
-          headers: { authorization: `Bearer ${apiKey}` },
-          signal: AbortSignal.timeout(10_000),
-        },
-      );
+      const response = await fetchCatalog(baseURL, apiKey, fetchImpl);
       if (response.status === 401 || response.status === 403) {
         throw new CredentialError(
           `Orvix ${providerID}: /models returned ${response.status}; check API key and scope`,
@@ -108,7 +198,7 @@ export async function resolveModels(
         const caps = raw.capabilities ?? {};
         if (
           (caps.image_generation === true && caps.tools !== true) ||
-          /(?:embed|rerank)/i.test(raw.id)
+          isNonChatModel(raw.id)
         )
           return [];
         const model = toModelInfo(raw.id, providerID);
@@ -124,7 +214,7 @@ export async function resolveModels(
             ...model,
             name:
               typeof raw.name === "string" && raw.name.trim()
-                ? `${raw.name} (Orvix)`
+                ? `${raw.name.replace(/^Orvix(?::|\s)\s*/i, "").trim() || raw.name} ${nameSuffix(providerID)}`
                 : model.name,
             limit: {
               ...model.limit,
@@ -159,7 +249,7 @@ export async function resolveModels(
     }
   }
   if (ids.length === 0)
-    ids = Object.keys(KNOWN_MODELS).map((id) => `${MODEL_PREFIX}${id}`);
+    ids = fallbackModelIDs(providerID).map((id) => `${MODEL_PREFIX}${id}`);
   return ids.map((id) => toModelInfo(id, providerID));
 }
 
